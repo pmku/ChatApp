@@ -69,7 +69,7 @@ const char *parityCalculator(char *message,int messagelength)
 {
     printf("%s\n",message);
     char* returnarray = (char*)malloc(messagelength + 8 + 10 * sizeof(char));
-    
+
     int i,j;
     int arr[messagelength][8];
     // Assignment of messages bits to two dimentional array
@@ -77,59 +77,59 @@ const char *parityCalculator(char *message,int messagelength)
     {
         int x = 0;
         char c = message[j];
-        for (i = 7; i >= 0; i--) 
+        for (i = 7; i >= 0; i--)
         {
             arr[j][x] = (c >> i) & 1;
             x++;
         }
     }
-    
+
     // Checking of two dimentional Array
-    
+
     int verticalparityarr[8];
     int col,row;
     int horizontalarray[messagelength];
-    
+
     int parity = 0;
-    
+
     //Calculation of messages vertical parity
-    
-    for (col = 0; col < 8; col++) 
+
+    for (col = 0; col < 8; col++)
     {
       int parity = 1;
-      for (row = 0; row < messagelength; row++) 
+      for (row = 0; row < messagelength; row++)
       {
         parity ^= arr[row][col];
       }
       verticalparityarr[col] = parity;
-      
+
       // Cheking of horizontalarrays parity
     }
-    
+
     //Calculation of messages horizontal parity
-    
-    for (i = 0; i < messagelength; i++) 
+
+    for (i = 0; i < messagelength; i++)
     {
         parity = 1;
         char c = message[i];
-        while (c) 
+        while (c)
         {
           parity ^= c & 1;
           c >>= 1;
         }
         horizontalarray[i] = parity;
     }
-    
+
 
 
    // memcpy(returnarray, verticalparityarr, sizeof verticalparityarr);
 
-    
+
     unsigned int crc = CRC32(message);
-	
-	
+
+
 	int test1;
-    
+
     for(i = 10;i > 0;i--)
     {
         test1 = crc % 10;
@@ -137,25 +137,25 @@ const char *parityCalculator(char *message,int messagelength)
         returnarray[i-1] = (char) test1;
         crc /= 10;
     }
-    
+
     j = 0;
-    
+
     for(i = 10;i < 18;i++)
     {
         returnarray[i] = (char)verticalparityarr[j] + 48;
         j++;
     }
-    
+
     j = 0;
-    
+
     for(i = 18;i < messagelength + 18;i++)
     {
-        
+
         returnarray[i] = (char)horizontalarray[j] + 48;
         j++;
-        
+
     }
-    
+
     return returnarray;
 }
 
@@ -163,18 +163,19 @@ int main()
 {
     char *message;
     size_t size = 0;
-    ssize_t n;
+    size_t n; //Fixed typo here
     n = getline(&message, &size, stdin);
     message[strlen(message)-1] = NULL;
-    
+
     int i;
     char *calculated_checker ;
-    
+
     calculated_checker = parityCalculator(message,strlen(message));
-    
+
     printf("\n%s",calculated_checker);
-    
+
     //strcat(seperator,message);
-    
+
     //strcat(seperator,str);
 }
+

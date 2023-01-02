@@ -16,7 +16,6 @@ struct client{
 	struct sockaddr_in c_address;
 	char * c_username;
 	struct client *nextc;
-	struct client *prevc;
 };
 
 int sockfd, addrlen; //Socket file descriptor and address length
@@ -25,15 +24,19 @@ struct sockaddr_in address; //*_in there represents inet IPV4
 /*Clientside will have a selector menu that lists
   available servers(localhost and one that I'll be hosting)
   */
+
 /*void quithandler(){
 //Loop below will close connections with every client
 struct client *c_temp = serverclient; //Serverclient pointer will hold the main chatroom(group one)
-while(c_temp->nextc == NULL){
-close(c_address);
+struct client *c_temp2 = NULL;
+while(c_temp != NULL){
+close(c_temp->c_address);
+ctemp2 = c_temp; //Second temporary pointer that holds memory space to be freed;
 c_temp=c_temp->nextc;
-free(c_temp->prevc);
+free(c_temp2);
 }
 */
+
 
 int acceptsock(){ //Acceptsock will be called when a new client connects
 	int newsock;
@@ -78,7 +81,7 @@ int main(int argc, char *argv[]){
 
 	//Setsocketopt in case the address in use
 	int opt = 1;
-	if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
+	if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEADDR, &opt, sizeof(opt))) {
 		fprintf(stderr,"\nSocketopt could not be set\n");
 		exit(EXIT_FAILURE);
 	}

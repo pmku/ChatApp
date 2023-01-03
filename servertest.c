@@ -1,9 +1,9 @@
 #include<stdio.h>
 #include<stdlib.h>
+#include <strings.h>
 #include<unistd.h>
 #include<sys/socket.h>
 #include<netinet/in.h>
-#include<string.h>
 #include<signal.h>
 #include<string.h>
 #include<pthread.h>
@@ -51,26 +51,26 @@ int acceptsock(){ //Acceptsock will be called when a new client connects
 }
 //Listener for client, also the thread function
 void *c_listener(void *_client){
-	char *rmessage = NULL;
+	char rmessage[1024];
+	send(((struct client *)_client)->c_address,"weiner", 4, 0);
 	while(1){
 		sleep(1);
-
 		read(((struct client*)_client)->c_address, rmessage, strlen(rmessage)); //every char is 1 byte anyways(ASCII)
-		if(rmessage != NULL){ //If string is not empty
-			if(strncmp(rmessage,"GONE", 4)){
+		if(rmessage[0] != 0){ //If string is not empty
+			if(strncmp(rmessage,"GONE", 4) == 0){
 				//kill thread function
 			}
-			else if(strncmp(rmessage,"MESG", 4)){
+			else if(strncmp(rmessage,"MESG", 4) == 0){
 				//Send message function
+				send(((struct client*)_client)->c_address, "ok", 2, 0);
 				//Hanifi seninkiler buraya
 					}
-			else if(strncmp(rmessage,"MERR", 4)){
+			else if(strncmp(rmessage,"MERR", 4) == 0){
 				//Resend the message in case of an error
 					}
 		}
 	}
 }
-
 int main(int argc, char *argv[]){
 	addrlen = sizeof(address); //Put value in addrlen, it was just global with 0 in it
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -116,30 +116,38 @@ int main(int argc, char *argv[]){
 
 	//Connection listener, will stay at the last section
 	int newaddr=0;
-	char newuser[20];
-	char newusername[16];
+	char newuser[20]={0};
+	char newusername[16]={0};
 	int i=0; //Iterator for string loop below
-	struct client *temp = mainc; //Temporary struct pointer to be passed in thread function
+	struct client *itr = mainc; //Temporary struct pointer to be passed in thread function
 	pthread_t threads[10];
+	printf("\nServer has started listening for connections\n");
 	while(1){
 		sleep(1);
 		newaddr=acceptsock();
 		read(newaddr,newuser, 20);
-		if(strncmp(newuser,"CONN", 4)){
-			while(temp->nextc != NULL) temp=temp->nextc;
+		if(strncmp(newuser,"CONN", 4) == 0){
+			while(itr->nextc != NULL) itr=itr->nextc;
+			struct client *temp=malloc(sizeof(struct client));//new ll item
+			itr->nextc=temp;
 			//At the end of the ll
 			//Extract the username from CONN signal into the newusername string
-			for (i=6; newuser[i] != '\0'; i++) {
-			newusername[i-6]=newuser[i];
+			for (i=0; (newuser[i+5] != 0) | (newuser[i+5] > 255u); i++) {
+			newusername[i]=newuser[i+5];
 			}
+			newusername[i+1] = '\0'; //Add null character to the end
 			strcpy(temp->c_username,newusername);//Put username in
 			temp->c_address=newaddr;//Put the address in the ll to be passed into the thread func.
 			temp->c_index=thread_index; //Client index global var started from 1
 			temp->nextc=NULL;
+			printf("\nClient Connected,username %s, thread_id %d, address %d\n",temp->c_username, temp->c_index, temp->c_address);
 			pthread_create(&threads[temp->c_index], NULL, c_listener, (void *)temp);
+			//pthread_join(temp->c_index, NULL);
+			mainc->nextc=temp;
 			thread_index++;
-			pthread_join(temp->c_index, NULL);
 		}
+		//Reset temporary values for new clients;
+		newaddr=0; i=0; bzero(newuser,20); bzero(newusername,16);
 	}
 	return 0;
 }

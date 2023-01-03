@@ -63,7 +63,7 @@ uint32_t CRC32(char *msg) {
 	return crc32;
 }
 
-const char *parityCalculator(char *message,int messagelength)
+char *parityCalculator(char *message,int messagelength)
 {
     char* returnarray = (char*)malloc(messagelength + 8 + 10 * sizeof(char));
     
@@ -203,22 +203,21 @@ int corruptionChecker(char *received_message) {
     
     char selected_string[messagelength];
 
+    
     // Assignment of message to selected_string
-    for(i = 0; i < messagelength; i++)
+    for(i = 0; i < messagelength + 2; i++)
     {
-        selected_string[i] = received_message[chekerBitCount + commandCount + i + 1];
+        selected_string[i] = received_message[1 + chekerBitCount + commandCount + i ];
     }
     
-    selected_string[strlen(selected_string) - 2] = '\0';
-    
+
     //calculation of checkingbits
     
     const char *calculated_bits ;
     
     calculated_bits = parityCalculator(selected_string,strlen(selected_string));
     
-    
-    // Cheking if calculated parities are mathing with the parities that are received with the message
+    // Cheking if calculated parities are matching with the parities that are received with the message
 
     for(i = commandCount; i < commandCount + chekerBitCount; i++)
     {
@@ -250,64 +249,22 @@ int main(){
 
     char realchoice[100];
     
-    int i = input(realchoice);
+    int i ;
     
     char *finishedMessage;
     
-    printf("\n");
+    char encriptedmessage[100] = "MESG|" ;
     
-    if(strcmp(realchoice,"MESG") == 0)
-    {
-        i = input(realmessage);
-        char *message = realmessage;
-        char *encriptedmessage = realchoice;
-        encriptedmessage[strlen(encriptedmessage)] = '|';
-        char *encriptedbits = parityCalculator(message,strlen(message));
-        strcat(encriptedmessage,encriptedbits);
-        encriptedmessage[strlen(encriptedmessage)] = '|';
-        strcat(encriptedmessage,message);
-        finishedMessage = encriptedmessage;
-    }
-    else if(strcmp(realchoice,"CONN") == 0)
-    {
-         i = input(realmessage);
-        char *message = realmessage;
-        char *encriptedmessage = realchoice;
-        encriptedmessage[strlen(encriptedmessage)] = '|';
-        char *encriptedbits = parityCalculator(message,strlen(message));
-        strcat(encriptedmessage,encriptedbits);
-        encriptedmessage[strlen(encriptedmessage)] = '|';
-        strcat(encriptedmessage,message);
-        finishedMessage = encriptedmessage;
-    }
-    else if(strcmp(realchoice,"MERR") == 0)
-    {
-         i = input(realmessage);
-        char *message = realmessage;
-        char *encriptedmessage = realchoice;
-        encriptedmessage[strlen(encriptedmessage)] = '|';
-        char *encriptedbits = parityCalculator(message,strlen(message));
-        strcat(encriptedmessage,encriptedbits);
-        encriptedmessage[strlen(encriptedmessage)] = '|';
-        strcat(encriptedmessage,message);
-        finishedMessage = encriptedmessage;
-    }
-    else if(strcmp(realchoice,"GONE") == 0)
-    {
-         i = input(realmessage);
-        char *message = realmessage;
-        char *encriptedmessage = realchoice;
-        encriptedmessage[strlen(encriptedmessage)] = '|';
-        char *encriptedbits = parityCalculator(message,strlen(message));
-        strcat(encriptedmessage,encriptedbits);
-        encriptedmessage[strlen(encriptedmessage)] = '|';
-        strcat(encriptedmessage,message);
-        finishedMessage = encriptedmessage;
-    }
-    else
-    {
-        printf("Başaramadık abi");
-    }
+    printf("\n");
+  
+    i = input(realmessage);
+    char *message = realmessage;
+    char *encriptedbits = parityCalculator(message,strlen(message));
+    strcat(encriptedmessage,encriptedbits);
+    encriptedmessage[strlen(encriptedmessage)] = '|';
+    strcat(encriptedmessage,message);
+    finishedMessage = encriptedmessage;
+
     
     if(finishedMessage != NULL)
     {

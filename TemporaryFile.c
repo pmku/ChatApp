@@ -294,19 +294,25 @@ int main()
     char realMessage[100];
     int charackterChecker = 1;
     int defaultChecker = 0;
+    int tester = 0;
     while(charackterChecker != 0)
     {
         i = input(realMessage);
         char *receiver = receiverReturner(realMessage);
-        printf("\n%s",receiver);
         for(i = 0;i < strlen(realMessage);i++)
         {
-            if(realMessage[i] > 255u)
+            if(realMessage[i] != '-' && realMessage[i+1]!= '>')
+            {
+                tester++;
+            }
+            
+            if(realMessage[i] > 255u && tester == 0)
             {
                 printf("You can't enter turkish caracters please try again.\n");
                 defaultChecker = 1;
                 break;
             }
+            
             defaultChecker = 0;
         }
         
@@ -317,8 +323,6 @@ int main()
         {
             charackterChecker = 0;
         }
-        
-        
     }
     char *message = messageReturner(realMessage);
     char *receiver = receiverReturner(realMessage);
@@ -329,7 +333,6 @@ int main()
     strcat(encriptedmessage,realMessage);
     finishedMessage = encriptedmessage;
     printf("\n%s\n",finishedMessage);
-    printf("\n%s\n",receiver);
     
     if(finishedMessage != NULL)
     {

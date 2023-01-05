@@ -291,14 +291,42 @@ int main()
     int i;
     char *finishedMessage;
     char encriptedmessage[100] = "MESG|" ;
-    char realmessage[] = "GFDHGDFGHF GHJGHJHGJGH ldfsdfsen mk->mehmet";
-    char *message = messageReturner(realmessage);
-    char *receiver = receiverReturner(realmessage);
+    char realMessage[100];
+    int charackterChecker = 1;
+    int defaultChecker = 0;
+    while(charackterChecker != 0)
+    {
+        i = input(realMessage);
+        char *receiver = receiverReturner(realMessage);
+        printf("\n%s",receiver);
+        for(i = 0;i < strlen(realMessage);i++)
+        {
+            if(realMessage[i] > 255u)
+            {
+                printf("You can't enter turkish caracters please try again.\n");
+                defaultChecker = 1;
+                break;
+            }
+            defaultChecker = 0;
+        }
+        
+        if(strlen(receiver) == 0 && defaultChecker == 0){
+            printf("You have to enter a receiver format is: ->User\n");
+        }
+        else if(defaultChecker == 0)
+        {
+            charackterChecker = 0;
+        }
+        
+        
+    }
+    char *message = messageReturner(realMessage);
+    char *receiver = receiverReturner(realMessage);
     char *encriptedbits = parityCalculator(message,strlen(message));
-    //i = input(realmessage);
+    
     strcat(encriptedmessage,encriptedbits);
     encriptedmessage[strlen(encriptedmessage)] = '|';
-    strcat(encriptedmessage,realmessage);
+    strcat(encriptedmessage,realMessage);
     finishedMessage = encriptedmessage;
     printf("\n%s\n",finishedMessage);
     printf("\n%s\n",receiver);
@@ -317,3 +345,5 @@ int main()
     }
     
 }
+
+

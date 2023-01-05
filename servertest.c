@@ -182,7 +182,7 @@ int main(int argc, char *argv[]){
 			fprintf(logfile,"%s Client connected with username %s, thread_id %d, address %d\n", getdate(), temp->c_username, temp->c_index, temp->c_address);
 			printf("Client connected with username %s, thread_id %d, address %d\n",temp->c_username, temp->c_index, temp->c_address);
 			pthread_create(&threads[temp->c_index], NULL, c_listener, (void *)temp);
-			//pthread_join(temp->c_index, NULL);
+			pthread_join(temp->c_index, NULL);
 			mainc->nextc=temp;
 			thread_index++;
 		}

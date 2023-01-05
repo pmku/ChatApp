@@ -301,7 +301,7 @@ int main()
         char *receiver = receiverReturner(realMessage);
         for(i = 0;i < strlen(realMessage);i++)
         {
-            if(realMessage[i] != '-' && realMessage[i+1]!= '>')
+            if(realMessage[i] == '-' && realMessage[i+1]== '>')
             {
                 tester++;
             }

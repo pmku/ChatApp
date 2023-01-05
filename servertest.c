@@ -9,9 +9,9 @@
 #include<pthread.h>
 
 #define PORT 17137 //Port that server is going to use
+FILE *logfile; //Pointer for logfile
 
 int thread_index = 1; //Will store id for the clients, also thread id
-
 //ll to hold client data
 struct client{
 	int c_index;
@@ -41,14 +41,29 @@ c_temp=c_temp->nextc;
 free(c_temp2);
 }
 */
+
+//Returns a pointer that holds the date as a string
+char date_s[21];
+char *getdate(){
+	time_t T=time(NULL);
+	struct tm date = *localtime(&T);
+
+	snprintf(date_s, 20, "%d-%02d-%02d_%02d:%02d:%02d", date.tm_year+1900, date.tm_mon+1, date.tm_yday+1, date.tm_hour, date.tm_min, date.tm_sec);
+	return date_s;
+}
+
 int acceptsock(){ //Acceptsock will be called when a new client connects
 	int newsock;
 	if ((newsock = accept(sockfd, (struct sockaddr*)&address, (socklen_t*)&addrlen)) < 0) {
-		fprintf(stderr,"\nError while accepting connection\n");
+		fprintf(stderr,"Error while accepting connection\n");
+		fprintf(logfile,"%s Error while accepting connection\n", getdate());
 		exit(EXIT_FAILURE);
 	}
 	return newsock;
 }
+
+
+
 //Listener for client, also the thread function
 void *c_listener(void *_client){
 	char rmessage[1024];
@@ -59,6 +74,9 @@ void *c_listener(void *_client){
 		if(rmessage[0] != 0){ //If string is not empty
 			if(strncmp(rmessage,"GONE", 4) == 0){
 				//kill thread function
+				fprintf(logfile,"%s User %s has left, killing thread with internal id %d\n", getdate(), ((struct client *)_client)->c_username, ((struct client *)_client)->c_index);
+				bzero(((struct client *)_client)->c_username, 16); //Can't bother with efficient memory management for 10 points, this is way better than expected as is tbh.
+				pthread_exit(0);
 			}
 			else if(strncmp(rmessage,"MESG", 4) == 0){
 				//Send message function
@@ -71,7 +89,24 @@ void *c_listener(void *_client){
 		}
 	}
 }
+
+
+
 int main(int argc, char *argv[]){
+	//Init logfile
+	system("mkdir logs");
+	char filename[30];
+	snprintf(filename, 29, "logs/%s.log", getdate());
+
+	logfile = fopen(filename, "w");
+	if (logfile == NULL){
+		fprintf(stderr, "\nError while creating file %s\n", filename);
+	}
+	else{
+		printf("Logfile %s has been created", filename);
+	}
+
+	//Init socket
 	addrlen = sizeof(address); //Put value in addrlen, it was just global with 0 in it
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	/*
@@ -84,14 +119,16 @@ int main(int argc, char *argv[]){
 
 	//Failure check for socket
 	if (sockfd < 0){
-		fprintf(stderr,"\nSocket creation has failed\n");
+		fprintf(stderr,"Socket creation has failed\n");
+		fprintf(logfile,"%s Socket creation has failed\n", getdate());
 		exit(EXIT_FAILURE);
 	}
 
 	//Setsocketopt in case the address in use
 	int opt = 1;
 	if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEADDR, &opt, sizeof(opt))) {
-		fprintf(stderr,"\nSocketopt could not be set\n");
+		fprintf(stderr,"Socketopt could not be set\n");
+		fprintf(logfile,"%s Socketopt could not be set\n", getdate());
 		exit(EXIT_FAILURE);
 	}
 	address.sin_family = AF_INET;
@@ -100,13 +137,15 @@ int main(int argc, char *argv[]){
 
 	//Final, binding section
 	if (bind(sockfd, (struct sockaddr*)&address, sizeof(address)) < 0) {
-		fprintf(stderr,"\nSocket binding has failed\n");
+		fprintf(stderr,"Socket binding has failed\n");
+		fprintf(logfile,"%s Socket binding has failed\n", getdate());
 		exit(EXIT_FAILURE);
 	}
 
 	//Put the server socket in listening mode. 5 is the max length of the queue
 	if (listen(sockfd, 10) < 0) {
-		fprintf(stderr,"\nSocket can't be listened\n");
+		fprintf(stderr,"Socket could not be listened\n");
+		fprintf(logfile,"%s Socket could not be listened\n", getdate());
 		exit(EXIT_FAILURE);
 	}
 	//Initialise the first "client"(main chatroom) and the linked-list
@@ -115,9 +154,9 @@ int main(int argc, char *argv[]){
 	strcpy(mainc->c_username, "main");
 
 	//Connection listener, will stay at the last section
-	int newaddr=0;
-	char newuser[20]={0};
-	char newusername[16]={0};
+	int newaddr=0;//Holds newuser address
+	char newuser[20]={0};//Holds message from new cliet
+	char newusername[16]={0};//Holds username for new client
 	int i=0; //Iterator for string loop below
 	struct client *itr = mainc; //Temporary struct pointer to be passed in thread function
 	pthread_t threads[10];
@@ -140,7 +179,8 @@ int main(int argc, char *argv[]){
 			temp->c_address=newaddr;//Put the address in the ll to be passed into the thread func.
 			temp->c_index=thread_index; //Client index global var started from 1
 			temp->nextc=NULL;
-			printf("\nClient Connected,username %s, thread_id %d, address %d\n",temp->c_username, temp->c_index, temp->c_address);
+			fprintf(logfile,"%s Client connected with username %s, thread_id %d, address %d\n", getdate(), temp->c_username, temp->c_index, temp->c_address);
+			printf("Client connected with username %s, thread_id %d, address %d\n",temp->c_username, temp->c_index, temp->c_address);
 			pthread_create(&threads[temp->c_index], NULL, c_listener, (void *)temp);
 			//pthread_join(temp->c_index, NULL);
 			mainc->nextc=temp;

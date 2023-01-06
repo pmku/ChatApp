@@ -25,6 +25,21 @@ struct sockaddr_in address; //*_in there represents inet IPV4
 
 struct client *mainc; //Init the main client(groupchat), also root pointer for all clients.
 
+char *messageReturner(char *message)
+{
+    char *trueMessage = (char*)malloc(sizeof(char) * strlen(message));
+    int i = 0,j = 0;
+    for(i = 0;i < strlen(message);i++)
+    {
+        if(message[i] != '-' && message[i + 1] != '>')
+        {
+            trueMessage[i] = message[i];
+        }
+    }
+    return trueMessage;
+}
+
+
 //I WILL ADD THE SENDER RECEIVER INFO!!!!
 /*Clientside will have a selector menu that lists
 available servers(localhost and one that I'll be hosting)
@@ -65,109 +80,114 @@ int acceptsock(){ //Acceptsock will be called when a new client connects
 
 
 //Listener for client, also the thread function
-void *c_listener(void *_client){
+void *c_listener(void *_client)
+{
 	char rmessage[1024];
 	send(((struct client *)_client)->c_address,"weiner", 4, 0);
-	while(1){
+	while(1)
+	{
 		sleep(1);
 		read(((struct client*)_client)->c_address, rmessage, 1024); //every char is 1 byte anyways(ASCII)
 		char *messageHolder = rmessage;
-		if(rmessage[0] != 0){ //If string is not empty
-			if(strncmp(rmessage,"GONE", 4) == 0){
+		if(rmessage[0] != 0)
+		{ //If string is not empty
+			if(strncmp(rmessage,"GONE", 4) == 0)
+			{
 				//kill thread function
 				fprintf(logfile,"%s User %s has left, killing thread with internal id %d\n", getdate(), ((struct client *)_client)->c_username, ((struct client *)_client)->c_index);
 				bzero(((struct client *)_client)->c_username, 16); //Can't bother with efficient memory management for 10 points, this is way better than expected as is tbh.
 				pthread_exit(0);
 			}
-			else if(strncmp(rmessage,"MESG", 4) == 0){
+			else if(strncmp(rmessage,"MESG", 4) == 0)
+			{
 				//Send message function
-				    int i;
-				    time_t t;
-                    srand((unsigned) time(&t));
-                    int randomNumbers[5];
-                    char teststring[100];
-                    int testnumber = 0;
+			    int i;
+			    time_t t;
+                srand((unsigned) time(&t));
+                int randomNumbers[5];
+                char teststring[100];
+                int testnumber = 0;
+                
+                for(i = 0; i < strlen(rmessage);i++)
+                {
+                    teststring[i] = rmessage[i];
+                }
                     
-                    for(i = 0; i < strlen(rmessage);i++)
-                    {
-                        teststring[i] = rmessage[i];
-                    }
-                        
-                    printf("Original string is : %s",rmessage);
+                printf("Original string is : %s",rmessage);
+                
+                
+                for(i = 0;i < 5;i++)
+                {
+                   randomNumbers[i] = rand() % 2;
+                }
                     
-                    
-                    for(i = 0;i < 5;i++)
-                    {
-                       randomNumbers[i] = rand() % 2;
-                    }
-                        
-                    
-                    
-                    for(i = 0;i < strlen(teststring);i++)
-                    {
-                       if(teststring[i] == '|')
-                       {
-                           testnumber++;
-                           i++;
-                       }
-                       
-                       if(testnumber == 1)
-                       {
-                           if(randomNumbers[0] == 1)
-                            {
-                                teststring[4 + randomNumbers[3]] = (char) randomNumbers[2] + 48;
-                                testnumber++;
-                            }
-                       }
-                    }
-                    
-				    send(((struct client*)_client)->c_address, teststring, 2, 0);
-					}
-			else if(strncmp(rmessage,"MERR", 4) == 0){
-    				    int i;
-    				    time_t t;
-                        srand((unsigned) time(&t));
-                        int randomNumbers[5];
-                        char teststring[100];
-                        int testnumber = 0;
-                        
-                        for(i = 0; i < strlen(rmessage);i++)
+                
+                
+                for(i = 0;i < strlen(teststring);i++)
+                {
+                   if(teststring[i] == '|')
+                   {
+                       testnumber++;
+                       i++;
+                   }
+                   
+                   if(testnumber == 1)
+                   {
+                       if(randomNumbers[0] == 1)
                         {
-                            teststring[i] = rmessage[i];
+                            teststring[4 + randomNumbers[3]] = (char) randomNumbers[2] + 48;
+                            testnumber++;
                         }
-                            
-                        printf("Original string is : %s",rmessage);
-                        
-                        
-                        for(i = 0;i < 5;i++)
-                        {
-                           randomNumbers[i] = rand() % 2;
-                        }
-                            
-                        
-                        
-                        for(i = 0;i < strlen(teststring);i++)
-                        {
-                           if(teststring[i] == '|')
-                           {
-                               testnumber++;
-                               i++;
-                           }
-                           
-                           if(testnumber == 1)
-                           {
-                               if(randomNumbers[0] == 1)
-                                {
-                                    teststring[4 + randomNumbers[3]] = (char) randomNumbers[2] + 48;
-                                    testnumber++;
-                                }
-                           }
-                        }
-					}
-		}
-	}
-}
+                   }
+                }
+                char *sendedMessage = messageReturner(testString);
+			    send(((struct client*)_client)->c_address, teststring, 2, 0);
+			}
+			else if(strncmp(rmessage,"MERR", 4) == 0)
+			{
+    			int i;
+    			time_t t;
+				srand((unsigned) time(&t));
+				int randomNumbers[5];
+				char teststring[100];
+				int testnumber = 0;
 
+				for(i = 0; i < strlen(rmessage);i++)
+				{
+				    teststring[i] = rmessage[i];
+				}
+
+				printf("Original string is : %s",rmessage);
+
+
+				for(i = 0;i < 5;i++)
+				{
+				   randomNumbers[i] = rand() % 2;
+				}
+
+
+
+				for(i = 0;i < strlen(teststring);i++)
+				{
+				   if(teststring[i] == '|')
+				   {
+				       testnumber++;
+				       i++;
+				   }
+
+				   if(testnumber == 1)
+				   {
+				       if(randomNumbers[0] == 1)
+					{
+					    teststring[4 + randomNumbers[3]] = (char) randomNumbers[2] + 48;
+					    testnumber++;
+					}
+				   }
+				}
+			}
+		}
+    }
+}
 int main(int argc, char *argv[]){
 	//Init logfile
 	system("mkdir logs");

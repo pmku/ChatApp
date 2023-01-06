@@ -23,23 +23,11 @@ struct client{
 int sockfd, addrlen; //Socket file descriptor and address length
 struct sockaddr_in address; //*_in there represents inet IPV4
 
-struct client *mainc; //Init the main client(groupchat), also root pointer for all clients.
+static struct client *mainc; //Init the main client(groupchat), also root pointer for all clients.
 
 //I WILL ADD THE SENDER RECEIVER INFO!!!!
 /*Clientside will have a selector menu that lists
 available servers(localhost and one that I'll be hosting)
-*/
-
-/*void quithandler(){
-//Loop below will close connections with every client
-struct client *c_temp = serverclient; //Serverclient pointer will hold the main chatroom(group one)
-struct client *c_temp2 = NULL;
-while(c_temp != NULL){
-close(c_temp->c_address);
-ctemp2 = c_temp; //Second temporary pointer that holds memory space to be freed;
-c_temp=c_temp->nextc;
-free(c_temp2);
-}
 */
 
 //Returns a pointer that holds the date as a string
@@ -52,6 +40,22 @@ char *getdate(){
 	return date_s;
 }
 
+void quithandler(){
+	printf("Server is halting\n");
+	fprintf(logfile,"%sServer shuting down\n",getdate());
+	//Loop below will close connections with every client
+	struct client *c_temp = mainc; //Serverclient pointer will hold the main chatroom(group one)
+	while(c_temp != NULL){
+		printf("Released address:%d\n",c_temp->c_address);
+		fprintf(logfile,"Released address:%d ", c_temp->c_address);
+		close(c_temp->c_address);
+		c_temp=c_temp->nextc;
+	}
+	fprintf(logfile, "\n");
+	fclose(logfile);
+	exit(1);
+}
+
 int acceptsock(){ //Acceptsock will be called when a new client connects
 	int newsock;
 	if ((newsock = accept(sockfd, (struct sockaddr*)&address, (socklen_t*)&addrlen)) < 0) {
@@ -62,11 +66,12 @@ int acceptsock(){ //Acceptsock will be called when a new client connects
 	return newsock;
 }
 
-
-
 //Listener for client, also the thread function
 void *c_listener(void *_client){
 	char rmessage[1024];
+	struct client *iterator = mainc;
+	char clientlist[200];
+
 	send(((struct client *)_client)->c_address,"weiner", 4, 0);
 	while(1){
 		sleep(1);
@@ -82,15 +87,29 @@ void *c_listener(void *_client){
 				//Send message function
 				send(((struct client*)_client)->c_address, "ok", 2, 0);
 				//Hanifi seninkiler buraya
-					}
+			}
 			else if(strncmp(rmessage,"MERR", 4) == 0){
 				//Resend the message in case of an error
-					}
+			}
+			//Send a list of clients to client that asks for it
+			else if(strncmp(rmessage,"L", 1) == 0){
+				bzero(clientlist, 200);
+				strcat(clientlist, "List of Active Clients\n");
+				while(iterator != NULL){
+					strcat(clientlist, iterator->c_username);
+					strcat(clientlist, "\n");
+					iterator=iterator->nextc;
+				}
+				send(((struct client *)_client)->c_address, clientlist, sizeof(clientlist), 0);
+			}
 		}
+		bzero(rmessage, 1024);
 	}
 }
 
 int main(int argc, char *argv[]){
+	signal(SIGINT, quithandler);
+
 	//Init logfile
 	system("mkdir logs");
 	char filename[30];
@@ -149,7 +168,7 @@ int main(int argc, char *argv[]){
 	//Initialise the first "client"(main chatroom) and the linked-list
 	mainc=malloc(sizeof(struct client));
 	mainc->nextc=NULL;
-	strcpy(mainc->c_username, "main");
+	strcpy(mainc->c_username, "Chatroom");
 
 	//Connection listener, will stay at the last section
 	int newaddr=0;//Holds newuser address
@@ -159,13 +178,16 @@ int main(int argc, char *argv[]){
 	struct client *itr = mainc; //Temporary struct pointer to be passed in thread function
 	pthread_t threads[10];
 	printf("\nServer has started listening for connections\n");
+	struct client *temp;
 	while(1){
 		sleep(1);
 		newaddr=acceptsock();
 		read(newaddr,newuser, 20);
 		if(strncmp(newuser,"CONN", 4) == 0){
-			while(itr->nextc != NULL) itr=itr->nextc;
-			struct client *temp=malloc(sizeof(struct client));//new ll item
+			while(itr->nextc != NULL){
+				itr=itr->nextc;
+			}
+			temp=malloc(sizeof(struct client));//new ll item
 			itr->nextc=temp;
 			//At the end of the ll
 			//Extract the username from CONN signal into the newusername string
@@ -180,7 +202,6 @@ int main(int argc, char *argv[]){
 			fprintf(logfile,"%s Client connected with username %s, thread_id %d, address %d\n", getdate(), temp->c_username, temp->c_index, temp->c_address);
 			printf("Client connected with username %s, thread_id %d, address %d\n",temp->c_username, temp->c_index, temp->c_address);
 			pthread_create(&threads[temp->c_index], NULL, c_listener, (void *)temp);
-			mainc->nextc=temp;
 			thread_index++;
 		}
 		//Reset temporary values for new clients;

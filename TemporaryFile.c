@@ -304,6 +304,12 @@ int main()
             if(realMessage[i] == '-' && realMessage[i+1]== '>')
             {
                 tester++;
+		if(tester == 2)
+                {
+                    printf("You cant enter two receiver please try again.");
+                    break;
+                    defaultChecker = 1;
+                }
             }
             
             if(realMessage[i] > 255u && tester == 0)

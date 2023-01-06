@@ -70,7 +70,7 @@ void *c_listener(void *_client){
 	send(((struct client *)_client)->c_address,"weiner", 4, 0);
 	while(1){
 		sleep(1);
-		read(((struct client*)_client)->c_address, rmessage, strlen(rmessage)); //every char is 1 byte anyways(ASCII)
+		read(((struct client*)_client)->c_address, rmessage, 1024); //every char is 1 byte anyways(ASCII)
 		if(rmessage[0] != 0){ //If string is not empty
 			if(strncmp(rmessage,"GONE", 4) == 0){
 				//kill thread function
@@ -89,8 +89,6 @@ void *c_listener(void *_client){
 		}
 	}
 }
-
-
 
 int main(int argc, char *argv[]){
 	//Init logfile
@@ -182,7 +180,6 @@ int main(int argc, char *argv[]){
 			fprintf(logfile,"%s Client connected with username %s, thread_id %d, address %d\n", getdate(), temp->c_username, temp->c_index, temp->c_address);
 			printf("Client connected with username %s, thread_id %d, address %d\n",temp->c_username, temp->c_index, temp->c_address);
 			pthread_create(&threads[temp->c_index], NULL, c_listener, (void *)temp);
-			pthread_join(temp->c_index, NULL);
 			mainc->nextc=temp;
 			thread_index++;
 		}

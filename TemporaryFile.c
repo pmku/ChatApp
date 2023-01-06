@@ -306,9 +306,10 @@ int main()
                 tester++;
 		if(tester == 2)
                 {
-                    printf("You cant enter two receiver please try again.");
-                    break;
-                    defaultChecker = 1;
+                    	printf("You cant enter two receiver please try again.");
+                    	defaultChecker = 1;
+			tester = 0;
+			break;
                 }
             }
             

@@ -39,6 +39,23 @@ char *messageReturner(char *message)
     return trueMessage;
 }
 
+char *receiverReturner(char *message)
+{
+    char *receiver = (char*)malloc(sizeof(char) * strlen(message));
+    int i = 0,j = 0;
+    for(i = 0;i < strlen(message);i++)
+    {
+        if(message[i] == '-' && message[i + 1] == '>')
+        {
+            for(i;i < strlen(message);i++)
+            {
+                receiver[j] = message[i + 2];
+                j++;
+            }
+        }
+    }
+    return receiver;
+}
 
 //I WILL ADD THE SENDER RECEIVER INFO!!!!
 /*Clientside will have a selector menu that lists
@@ -101,52 +118,46 @@ void *c_listener(void *_client)
 			else if(strncmp(rmessage,"MESG", 4) == 0)
 			{
 				//Send message function
-			    int i;
-			    time_t t;
-                srand((unsigned) time(&t));
-                int randomNumbers[5];
-                char teststring[100];
-                int testnumber = 0;
-                
-                for(i = 0; i < strlen(rmessage);i++)
-                {
-                    teststring[i] = rmessage[i];
-                }
-                    
-                printf("Original string is : %s",rmessage);
-                
-                
-                for(i = 0;i < 5;i++)
-                {
-                   randomNumbers[i] = rand() % 2;
-                }
-                    
-                
-                
-                for(i = 0;i < strlen(teststring);i++)
-                {
-                   if(teststring[i] == '|')
-                   {
-                       testnumber++;
-                       i++;
-                   }
-                   
-                   if(testnumber == 1)
-                   {
-                       if(randomNumbers[0] == 1)
-                        {
-                            teststring[4 + randomNumbers[3]] = (char) randomNumbers[2] + 48;
-                            testnumber++;
-                        }
-                   }
-                }
-                char *sendedMessage = messageReturner(testString);
-			    send(((struct client*)_client)->c_address, teststring, 2, 0);
+				int i;
+				time_t t;
+				srand((unsigned) time(&t));
+				int randomNumbers[5];
+				char teststring[100];
+				int testnumber = 0;
+
+				for(i = 0; i < strlen(rmessage);i++)
+				{
+					teststring[i] = rmessage[i];
+				}
+				for(i = 0;i < 5;i++)
+				{
+				   randomNumbers[i] = rand() % 2;
+				}
+				for(i = 0;i < strlen(teststring);i++)
+				{
+				   if(teststring[i] == '|')
+				   {
+				       testnumber++;
+				       i++;
+				   }
+
+				   if(testnumber == 1)
+				   {
+				       if(randomNumbers[0] == 1)
+					{
+					    teststring[4 + randomNumbers[3]] = (char) randomNumbers[2] + 48;
+					    testnumber++;
+					}
+				   }
+				}
+				char *sendedMessage = messageReturner(testString);
+				char *clientreceiver = receiverReturner(testString);
+			    	send(((struct client*)_client)->celientreceiver, teststring, 2, 0);
 			}
 			else if(strncmp(rmessage,"MERR", 4) == 0)
 			{
-    			int i;
-    			time_t t;
+				int i;
+    				time_t t;
 				srand((unsigned) time(&t));
 				int randomNumbers[5];
 				char teststring[100];
@@ -156,10 +167,6 @@ void *c_listener(void *_client)
 				{
 				    teststring[i] = rmessage[i];
 				}
-
-				printf("Original string is : %s",rmessage);
-
-
 				for(i = 0;i < 5;i++)
 				{
 				   randomNumbers[i] = rand() % 2;
@@ -184,9 +191,12 @@ void *c_listener(void *_client)
 					}
 				   }
 				}
+				char *sendedMessage = messageReturner(testString);
+				char *clientreceiver = receiverReturner(testString);
+			    	send(((struct client*)_client)->clientrecever, teststring, 2, 0);
 			}
 		}
-    }
+    	}
 }
 int main(int argc, char *argv[]){
 	//Init logfile

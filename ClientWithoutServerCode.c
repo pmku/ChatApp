@@ -2,7 +2,11 @@
 #include <string.h>
 #include <stdlib.h>
 #include<stdint.h>
-#include<inttypes.h> // uint32_t, uint8_t
+#include<inttypes.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#define PORT 17137
 
 char *parityCalculator(char *message,int messagelength);
 uint32_t CRC32(char *msg);
@@ -286,8 +290,36 @@ int corruptionChecker(char *received_message) {
 
 }
 
-int main()
+int main(int argc, char const* argv[])
 {
+    int sock = 0, valread, client_fd;
+    struct sockaddr_in serv_addr;
+    char buffer[1024] = { 0 };
+    char inp[10];
+    
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        printf("\n Socket creation error \n");
+        return -1;
+    }
+
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(PORT);
+    
+     if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr)
+        <= 0) {
+        printf(
+            "\nInvalid address/ Address not supported \n");
+        return -1;
+    }
+
+    if ((client_fd = connect(sock, (struct sockaddr*)&serv_addr,
+                   sizeof(serv_addr)))
+        < 0) {
+        printf("\nConnection Failed \n");
+        return -1;
+    }
+    
+    
     int i;
     char *finishedMessage;
     char encriptedmessage[100] = "MESG|" ;
@@ -341,18 +373,22 @@ int main()
     finishedMessage = encriptedmessage;
     printf("\n%s\n",finishedMessage);
     
-    if(finishedMessage != NULL)
-    {
-        i = corruptionChecker(finishedMessage);
-        if(i == 1)
-        {
-            printf("\nMessage is not corrupted");
-        }
-        else
-        {
-            printf("\nMessage is corrupted");
-        }
-    }
+    send(sock, finishedMessage, strlen(finishedMessage), 0);
+    
+    printf("Message sent.\n");
+    sleep(1);
+    
+    scanf("%s",inp);
+    valread = read(sock, buffer, 1024);
+    printf("%s\n", buffer);
+    send(sock, inp, strlen(inp), 0);
+    sleep(2);
+	valread = read(sock, buffer, 1024);
+    	printf("%s\n", buffer);
+
+    // closing the connected socket
+    close(client_fd);
+    return 0;
     
 }
 

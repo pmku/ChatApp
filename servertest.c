@@ -76,6 +76,7 @@ char *messageReturner(char *message){
 			trueMessage[i] = message[i];
 		}
 	}
+	trueMessage[i+1]='\0';
 	return trueMessage;
 }
 
@@ -91,14 +92,13 @@ char *receiverReturner(char *message){
 			}
 		}
 	}
+	receiver[j+1]='\0';
 	return receiver;
 }
 
 //Listener for client, also the thread function
 void *c_listener(void *_client){
 	char rmessage[1024];//Received message from the client
-	char smessage[1024];//Holds the string to be sent
-	char bmessage[1024];//Holds a backup for rmessage so MERR section can send the message again
 	struct client *iterator = mainc;
 	char clientlist[200];
 
@@ -119,7 +119,7 @@ void *c_listener(void *_client){
 				time_t t;
 				srand((unsigned) time(&t));
 				int randomNumbers[5];
-				char teststring[100];
+				char teststring[1024];
 				int testnumber = 0;
 
 				for(i = 0; i < strlen(rmessage);i++){
@@ -142,17 +142,25 @@ void *c_listener(void *_client){
 				}
 				char *sendedMessage = messageReturner(teststring);
 				char *clientreceiver = receiverReturner(teststring);
-				send(((struct client*)_client)->c_address, teststring, strlen(teststring), 0);
+				iterator=mainc;//Reset iterator
+				char target[17];
+				strcat(target, receiverReturner(teststring));
+				while(strcmp(target, iterator->c_username) != 0){
+					iterator=iterator->nextc;
+				}
+				send(iterator->c_address, teststring, strlen(teststring), 0);
+				bzero(target, 17);
+				fprintf(logfile,"%s %s", getdate(), teststring);
+				bzero(teststring, 1024);
 			}
 			else if(strncmp(rmessage,"MERR", 4) == 0){
 				//Resend the message in case of an error by Hanifi Demir
-				send(((struct client*)_client)->c_address, bmessage, strlen(bmessage), 0);
-
+				fprintf(logfile,"%s Client %s could not receive the message properly!\n",getdate(), ((struct client *)_client)->c_username);
 				int i;
 				time_t t;
 				srand((unsigned) time(&t));
 				int randomNumbers[5];
-				char teststring[100];
+				char teststring[1024];
 				int testnumber = 0;
 
 				for(i = 0; i < strlen(rmessage);i++)
@@ -177,8 +185,14 @@ void *c_listener(void *_client){
 					}
 				}
 				char *sendedMessage = messageReturner(teststring);
-				char *clientreceiver = receiverReturner(teststring);
-				send(((struct client*)_client)->c_address, teststring, 2, 0);
+				char target[17];
+				strcat(target, receiverReturner(teststring));
+				while(strcmp(target, iterator->c_username) != 0){
+					iterator=iterator->nextc;
+				}
+				send(iterator->c_address, teststring, strlen(teststring), 0);
+				bzero(target, 17);
+				bzero(teststring, 1024);
 			}
 
 			//Send a list of clients to client that asks for it
@@ -194,7 +208,6 @@ void *c_listener(void *_client){
 			}
 		}
 		bzero(rmessage, 1024);//Empty received/sent messages in any case
-		bzero(smessage, 1024);
 	}
 }
 

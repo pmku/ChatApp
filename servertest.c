@@ -66,13 +66,43 @@ int acceptsock(){ //Acceptsock will be called when a new client connects
 	return newsock;
 }
 
+//Two functions below by Hanifi Demir
+char *messageReturner(char *message){
+	char *trueMessage = (char*)malloc(sizeof(char) * strlen(message));
+	int i = 0,j = 0;
+	for(i = 0;i < strlen(message);i++){
+		if(message[i] != '-' && message[i + 1] != '>')
+		{
+			trueMessage[i] = message[i];
+		}
+	}
+	return trueMessage;
+}
+
+char *receiverReturner(char *message){
+	char *receiver = (char*)malloc(sizeof(char) * strlen(message));
+	int i = 0,j = 0;
+	for(i = 0;i < strlen(message);i++){
+		if(message[i] == '-' && message[i + 1] == '>'){
+			for(i=0;i < strlen(message);i++)
+			{
+				receiver[j] = message[i + 2];
+				j++;
+			}
+		}
+	}
+	return receiver;
+}
+
 //Listener for client, also the thread function
 void *c_listener(void *_client){
-	char rmessage[1024];
+	char rmessage[1024];//Received message from the client
+	char smessage[1024];//Holds the string to be sent
+	char bmessage[1024];//Holds a backup for rmessage so MERR section can send the message again
 	struct client *iterator = mainc;
 	char clientlist[200];
 
-	send(((struct client *)_client)->c_address,"weiner", 4, 0);
+	send(((struct client *)_client)->c_address,"Connected Successfully", 22, 0);
 	while(1){
 		sleep(1);
 		read(((struct client*)_client)->c_address, rmessage, 1024); //every char is 1 byte anyways(ASCII)
@@ -84,13 +114,73 @@ void *c_listener(void *_client){
 				pthread_exit(0);
 			}
 			else if(strncmp(rmessage,"MESG", 4) == 0){
-				//Send message function
-				send(((struct client*)_client)->c_address, "ok", 2, 0);
-				//Hanifi seninkiler buraya
+				//Send message subfunction by Hanifi Demir
+				int i=0;
+				time_t t;
+				srand((unsigned) time(&t));
+				int randomNumbers[5];
+				char teststring[100];
+				int testnumber = 0;
+
+				for(i = 0; i < strlen(rmessage);i++){
+					teststring[i] = rmessage[i];
+				}
+				for(i = 0;i < 5;i++){
+					randomNumbers[i] = rand() % 2;
+				}
+				for(i = 0;i < strlen(teststring);i++){
+					if(teststring[i] == '|'){
+						testnumber++;
+						i++;
+					}
+					if(testnumber == 1){
+						if(randomNumbers[0] == 1){
+							teststring[4 + randomNumbers[3]] = (char) randomNumbers[2] + 48;
+							testnumber++;
+						}
+					}
+				}
+				char *sendedMessage = messageReturner(teststring);
+				char *clientreceiver = receiverReturner(teststring);
+				send(((struct client*)_client)->c_address, teststring, strlen(teststring), 0);
 			}
 			else if(strncmp(rmessage,"MERR", 4) == 0){
-				//Resend the message in case of an error
+				//Resend the message in case of an error by Hanifi Demir
+				send(((struct client*)_client)->c_address, bmessage, strlen(bmessage), 0);
+
+				int i;
+				time_t t;
+				srand((unsigned) time(&t));
+				int randomNumbers[5];
+				char teststring[100];
+				int testnumber = 0;
+
+				for(i = 0; i < strlen(rmessage);i++)
+				{
+					teststring[i] = rmessage[i];
+				}
+				for(i = 0;i < 5;i++)
+				{
+					randomNumbers[i] = rand() % 2;
+				}
+
+				for(i = 0;i < strlen(teststring);i++){
+					if(teststring[i] == '|'){
+						testnumber++;
+						i++;
+					}
+					if(testnumber == 1){
+						if(randomNumbers[0] == 1){
+							teststring[4 + randomNumbers[3]] = (char) randomNumbers[2] + 48;
+							testnumber++;
+						}
+					}
+				}
+				char *sendedMessage = messageReturner(teststring);
+				char *clientreceiver = receiverReturner(teststring);
+				send(((struct client*)_client)->c_address, teststring, 2, 0);
 			}
+
 			//Send a list of clients to client that asks for it
 			else if(strncmp(rmessage,"L", 1) == 0){
 				bzero(clientlist, 200);
@@ -103,7 +193,8 @@ void *c_listener(void *_client){
 				send(((struct client *)_client)->c_address, clientlist, sizeof(clientlist), 0);
 			}
 		}
-		bzero(rmessage, 1024);
+		bzero(rmessage, 1024);//Empty received/sent messages in any case
+		bzero(smessage, 1024);
 	}
 }
 

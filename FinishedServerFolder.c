@@ -23,55 +23,11 @@ struct client{
 int sockfd, addrlen; //Socket file descriptor and address length
 struct sockaddr_in address; //*_in there represents inet IPV4
 
-struct client *mainc; //Init the main client(groupchat), also root pointer for all clients.
-
-char *messageReturner(char *message)
-{
-    char *trueMessage = (char*)malloc(sizeof(char) * strlen(message));
-    int i = 0,j = 0;
-    for(i = 0;i < strlen(message);i++)
-    {
-        if(message[i] != '-' && message[i + 1] != '>')
-        {
-            trueMessage[i] = message[i];
-        }
-    }
-    return trueMessage;
-}
-
-char *receiverReturner(char *message)
-{
-    char *receiver = (char*)malloc(sizeof(char) * strlen(message));
-    int i = 0,j = 0;
-    for(i = 0;i < strlen(message);i++)
-    {
-        if(message[i] == '-' && message[i + 1] == '>')
-        {
-            for(i;i < strlen(message);i++)
-            {
-                receiver[j] = message[i + 2];
-                j++;
-            }
-        }
-    }
-    return receiver;
-}
+static struct client *mainc; //Init the main client(groupchat), also root pointer for all clients.
 
 //I WILL ADD THE SENDER RECEIVER INFO!!!!
 /*Clientside will have a selector menu that lists
 available servers(localhost and one that I'll be hosting)
-*/
-
-/*void quithandler(){
-//Loop below will close connections with every client
-struct client *c_temp = serverclient; //Serverclient pointer will hold the main chatroom(group one)
-struct client *c_temp2 = NULL;
-while(c_temp != NULL){
-close(c_temp->c_address);
-ctemp2 = c_temp; //Second temporary pointer that holds memory space to be freed;
-c_temp=c_temp->nextc;
-free(c_temp2);
-}
 */
 
 //Returns a pointer that holds the date as a string
@@ -84,6 +40,22 @@ char *getdate(){
 	return date_s;
 }
 
+void quithandler(){
+	printf("Server is halting\n");
+	fprintf(logfile,"%sServer shuting down\n",getdate());
+	//Loop below will close connections with every client
+	struct client *c_temp = mainc; //Serverclient pointer will hold the main chatroom(group one)
+	while(c_temp != NULL){
+		printf("Released address:%d\n",c_temp->c_address);
+		fprintf(logfile,"Released address:%d ", c_temp->c_address);
+		close(c_temp->c_address);
+		c_temp=c_temp->nextc;
+	}
+	fprintf(logfile, "\n");
+	fclose(logfile);
+	exit(1);
+}
+
 int acceptsock(){ //Acceptsock will be called when a new client connects
 	int newsock;
 	if ((newsock = accept(sockfd, (struct sockaddr*)&address, (socklen_t*)&addrlen)) < 0) {
@@ -94,35 +66,101 @@ int acceptsock(){ //Acceptsock will be called when a new client connects
 	return newsock;
 }
 
+//Two functions below by Hanifi Demir
+char *messageReturner(char *message){
+	char *trueMessage = (char*)malloc(sizeof(char) * strlen(message));
+	int i = 0,j = 0;
+	for(i = 0;i < strlen(message);i++){
+		if(message[i] != '-' && message[i + 1] != '>')
+		{
+			trueMessage[i] = message[i];
+		}
+	}
+	trueMessage[i+1]='\0';
+	return trueMessage;
+}
 
+char *receiverReturner(char *message){
+	char *receiver = (char*)malloc(sizeof(char) * strlen(message));
+	int i = 0,j = 0;
+	for(i = 0;i < strlen(message);i++){
+		if(message[i] == '-' && message[i + 1] == '>'){
+			for(i=0;i < strlen(message);i++)
+			{
+				receiver[j] = message[i + 2];
+				j++;
+			}
+		}
+	}
+	receiver[j+1]='\0';
+	return receiver;
+}
 
 //Listener for client, also the thread function
-void *c_listener(void *_client)
-{
-	char rmessage[1024];
-	send(((struct client *)_client)->c_address,"weiner", 4, 0);
-	while(1)
-	{
+void *c_listener(void *_client){
+	char rmessage[1024];//Received message from the client
+	struct client *iterator = mainc;
+	char clientlist[200];
+
+	send(((struct client *)_client)->c_address,"Connected Successfully", 22, 0);
+	while(1){
 		sleep(1);
 		read(((struct client*)_client)->c_address, rmessage, 1024); //every char is 1 byte anyways(ASCII)
-		char *messageHolder = rmessage;
-		if(rmessage[0] != 0)
-		{ //If string is not empty
-			if(strncmp(rmessage,"GONE", 4) == 0)
-			{
+		if(rmessage[0] != 0){ //If string is not empty
+			if(strncmp(rmessage,"GONE", 4) == 0){
 				//kill thread function
 				fprintf(logfile,"%s User %s has left, killing thread with internal id %d\n", getdate(), ((struct client *)_client)->c_username, ((struct client *)_client)->c_index);
 				bzero(((struct client *)_client)->c_username, 16); //Can't bother with efficient memory management for 10 points, this is way better than expected as is tbh.
 				pthread_exit(0);
 			}
-			else if(strncmp(rmessage,"MESG", 4) == 0)
-			{
-				//Send message function
+			else if(strncmp(rmessage,"MESG", 4) == 0){
+				//Send message subfunction by Hanifi Demir
+				int i=0;
+				time_t t;
+				srand((unsigned) time(&t));
+				int randomNumbers[5];
+				char teststring[1024];
+				int testnumber = 0;
+
+				for(i = 0; i < strlen(rmessage);i++){
+					teststring[i] = rmessage[i];
+				}
+				for(i = 0;i < 5;i++){
+					randomNumbers[i] = rand() % 2;
+				}
+				for(i = 0;i < strlen(teststring);i++){
+					if(teststring[i] == '|'){
+						testnumber++;
+						i++;
+					}
+					if(testnumber == 1){
+						if(randomNumbers[0] == 1){
+							teststring[4 + randomNumbers[3]] = (char) randomNumbers[2] + 48;
+							testnumber++;
+						}
+					}
+				}
+				char *sendedMessage = messageReturner(teststring);
+				char *clientreceiver = receiverReturner(teststring);
+				iterator=mainc;//Reset iterator
+				char target[17];
+				strcat(target, receiverReturner(teststring));
+				while(strcmp(target, iterator->c_username) != 0){
+					iterator=iterator->nextc;
+				}
+				send(iterator->c_address, teststring, strlen(teststring), 0);
+				bzero(target, 17);
+				fprintf(logfile,"%s %s", getdate(), teststring);
+				bzero(teststring, 1024);
+			}
+			else if(strncmp(rmessage,"MERR", 4) == 0){
+				//Resend the message in case of an error by Hanifi Demir
+				fprintf(logfile,"%s Client %s could not receive the message properly!\n",getdate(), ((struct client *)_client)->c_username);
 				int i;
 				time_t t;
 				srand((unsigned) time(&t));
 				int randomNumbers[5];
-				char teststring[100];
+				char teststring[1024];
 				int testnumber = 0;
 
 				for(i = 0; i < strlen(rmessage);i++)
@@ -131,74 +169,51 @@ void *c_listener(void *_client)
 				}
 				for(i = 0;i < 5;i++)
 				{
-				   randomNumbers[i] = rand() % 2;
+					randomNumbers[i] = rand() % 2;
 				}
-				for(i = 0;i < strlen(teststring);i++)
-				{
-				   if(teststring[i] == '|')
-				   {
-				       testnumber++;
-				       i++;
-				   }
 
-				   if(testnumber == 1)
-				   {
-				       if(randomNumbers[0] == 1)
-					{
-					    teststring[4 + randomNumbers[3]] = (char) randomNumbers[2] + 48;
-					    testnumber++;
+				for(i = 0;i < strlen(teststring);i++){
+					if(teststring[i] == '|'){
+						testnumber++;
+						i++;
 					}
-				   }
+					if(testnumber == 1){
+						if(randomNumbers[0] == 1){
+							teststring[4 + randomNumbers[3]] = (char) randomNumbers[2] + 48;
+							testnumber++;
+						}
+					}
 				}
-				char *sendedMessage = messageReturner(testString);
-				char *clientreceiver = receiverReturner(testString);
-			    	send(((struct client*)_client)->celientreceiver, teststring, 2, 0);
+				char *sendedMessage = messageReturner(teststring);
+				char target[17];
+				strcat(target, receiverReturner(teststring));
+				while(strcmp(target, iterator->c_username) != 0){
+					iterator=iterator->nextc;
+				}
+				send(iterator->c_address, teststring, strlen(teststring), 0);
+				bzero(target, 17);
+				bzero(teststring, 1024);
 			}
-			else if(strncmp(rmessage,"MERR", 4) == 0)
-			{
-				int i;
-    				time_t t;
-				srand((unsigned) time(&t));
-				int randomNumbers[5];
-				char teststring[100];
-				int testnumber = 0;
 
-				for(i = 0; i < strlen(rmessage);i++)
-				{
-				    teststring[i] = rmessage[i];
+			//Send a list of clients to client that asks for it
+			else if(strncmp(rmessage,"L", 1) == 0){
+				bzero(clientlist, 200);
+				strcat(clientlist, "List of Active Clients\n");
+				while(iterator != NULL){
+					strcat(clientlist, iterator->c_username);
+					strcat(clientlist, "\n");
+					iterator=iterator->nextc;
 				}
-				for(i = 0;i < 5;i++)
-				{
-				   randomNumbers[i] = rand() % 2;
-				}
-
-
-
-				for(i = 0;i < strlen(teststring);i++)
-				{
-				   if(teststring[i] == '|')
-				   {
-				       testnumber++;
-				       i++;
-				   }
-
-				   if(testnumber == 1)
-				   {
-				       if(randomNumbers[0] == 1)
-					{
-					    teststring[4 + randomNumbers[3]] = (char) randomNumbers[2] + 48;
-					    testnumber++;
-					}
-				   }
-				}
-				char *sendedMessage = messageReturner(testString);
-				char *clientreceiver = receiverReturner(testString);
-			    	send(((struct client*)_client)->clientrecever, teststring, 2, 0);
+				send(((struct client *)_client)->c_address, clientlist, sizeof(clientlist), 0);
 			}
 		}
-    	}
+		bzero(rmessage, 1024);//Empty received/sent messages in any case
+	}
 }
+
 int main(int argc, char *argv[]){
+	signal(SIGINT, quithandler);
+
 	//Init logfile
 	system("mkdir logs");
 	char filename[30];
@@ -257,7 +272,7 @@ int main(int argc, char *argv[]){
 	//Initialise the first "client"(main chatroom) and the linked-list
 	mainc=malloc(sizeof(struct client));
 	mainc->nextc=NULL;
-	strcpy(mainc->c_username, "main");
+	strcpy(mainc->c_username, "Chatroom");
 
 	//Connection listener, will stay at the last section
 	int newaddr=0;//Holds newuser address
@@ -267,13 +282,16 @@ int main(int argc, char *argv[]){
 	struct client *itr = mainc; //Temporary struct pointer to be passed in thread function
 	pthread_t threads[10];
 	printf("\nServer has started listening for connections\n");
+	struct client *temp;
 	while(1){
 		sleep(1);
 		newaddr=acceptsock();
 		read(newaddr,newuser, 20);
 		if(strncmp(newuser,"CONN", 4) == 0){
-			while(itr->nextc != NULL) itr=itr->nextc;
-			struct client *temp=malloc(sizeof(struct client));//new ll item
+			while(itr->nextc != NULL){
+				itr=itr->nextc;
+			}
+			temp=malloc(sizeof(struct client));//new ll item
 			itr->nextc=temp;
 			//At the end of the ll
 			//Extract the username from CONN signal into the newusername string
@@ -288,7 +306,6 @@ int main(int argc, char *argv[]){
 			fprintf(logfile,"%s Client connected with username %s, thread_id %d, address %d\n", getdate(), temp->c_username, temp->c_index, temp->c_address);
 			printf("Client connected with username %s, thread_id %d, address %d\n",temp->c_username, temp->c_index, temp->c_address);
 			pthread_create(&threads[temp->c_index], NULL, c_listener, (void *)temp);
-			mainc->nextc=temp;
 			thread_index++;
 		}
 		//Reset temporary values for new clients;

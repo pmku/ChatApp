@@ -6,7 +6,6 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <unistd.h>
-#define PORT 17137
 
 char *parityCalculator(char *message,int messagelength);
 uint32_t CRC32(char *msg);
@@ -14,6 +13,17 @@ int input(char str[]);
 int corruptionChecker(char *received_message);
 char *receiverReturner(char *message);
 char *messageReturner(char *message);
+
+int input(char str[])
+{
+    int ch, i = 0;  
+    while((ch = getchar()) != '\n')
+    {
+        str[i++] = ch;
+    }
+    str[i] = '\0';
+    return i;
+}
 
 uint32_t CRC32(char *msg) {
 	const uint32_t CRCTable[] = { //Table for standart CRC32
@@ -74,15 +84,38 @@ uint32_t CRC32(char *msg) {
 	return crc32;
 }
 
-int input(char str[])
+char *messageReturner(char *message)
 {
-    int ch, i = 0;  
-    while((ch = getchar()) != '\n')
+    char *trueMessage = (char*)malloc(sizeof(char) * strlen(message));
+    int i = 0,j = 0;
+    for(i = 0;i < strlen(message);i++)
     {
-        str[i++] = ch;
+        if(message[i] != '-' && message[i + 1] != '>')
+        {
+            trueMessage[i] = message[i];
+        }
     }
-    str[i] = '\0';
-    return i;
+    trueMessage[i] = '\0';
+    return trueMessage;
+}
+
+char *receiverReturner(char *message)
+{
+    char *receiver = (char*)malloc(sizeof(char) * strlen(message));
+    int i = 0,j = 0;
+    for(i = 0;i < strlen(message);i++)
+    {
+        if(message[i] == '-' && message[i + 1] == '>')
+        {
+            for(i;i < strlen(message);i++)
+            {
+                receiver[j] = message[i + 2];
+                j++;
+            }
+        }
+    }
+    receiver[i] = '\0';
+    return receiver;
 }
 
 char *parityCalculator(char *trueMessage,int messagelength)
@@ -175,43 +208,14 @@ char *parityCalculator(char *trueMessage,int messagelength)
         
     }
     
+    returnarray[i] = '\0';
+
     return returnarray;
 }
 
-char *messageReturner(char *message)
+
+int corruptionChecker(char *received_message) 
 {
-    char *trueMessage = (char*)malloc(sizeof(char) * strlen(message));
-    int i = 0,j = 0;
-    for(i = 0;i < strlen(message);i++)
-    {
-        if(message[i] != '-' && message[i + 1] != '>')
-        {
-            trueMessage[i] = message[i];
-        }
-    }
-    return trueMessage;
-}
-
-char *receiverReturner(char *message)
-{
-    char *receiver = (char*)malloc(sizeof(char) * strlen(message));
-    int i = 0,j = 0;
-    for(i = 0;i < strlen(message);i++)
-    {
-        if(message[i] == '-' && message[i + 1] == '>')
-        {
-            for(i;i < strlen(message);i++)
-            {
-                receiver[j] = message[i + 2];
-                j++;
-            }
-        }
-    }
-    return receiver;
-}
-
-int corruptionChecker(char *received_message) {
-
     char *state = "true";
     int checkerBitCount=0, commandCount, i, j, messagelength = 0; //Init the counter before you increment it
     int stack = 0;
@@ -245,7 +249,8 @@ int corruptionChecker(char *received_message) {
         }
     }
     
-    checkerBitCount = checkerBitCount - messagelength - 1;
+    checkerBitCount = checkerBitCount - messagelength;
+
     
     //received_message[commandCount + checkerBitCount + i + 1] = starting index of message 
     
@@ -253,23 +258,24 @@ int corruptionChecker(char *received_message) {
 
     
     // Assignment of message to selected_string
-    for(i = 0; i < messagelength + 2; i++)
+    for(i = 0; i < messagelength + 1; i++)
     {
         selected_string[i] = received_message[checkerBitCount + commandCount + i + 1];
     }
-    selected_string[i - 1] = '\0';
-    selected_string[i - 2] = '\0';
-    //calculation of checkingbits
     
+    selected_string[i] = '\0';
+    
+    //calculation of checkingbits
+
     const char *calculated_bits ;
     
     calculated_bits = parityCalculator(selected_string,strlen(selected_string));
     
     // Cheking if calculated parities are matching with the parities that are received with the message
 
-    for(i = commandCount; i < commandCount + checkerBitCount; i++)
+    for(i = 0; i < checkerBitCount; i++)
     {
-        if(received_message[i] == calculated_bits [i - commandCount])
+        if(received_message[i + commandCount] == calculated_bits [i])
         {
             continue;
         }
@@ -278,7 +284,7 @@ int corruptionChecker(char *received_message) {
             state = "false";
         }
     }
-    
+
     if(state == "false")
     {
         return 0;
@@ -287,7 +293,7 @@ int corruptionChecker(char *received_message) {
     {
         return 1;
     }
-
+    
 }
 
 int main(int argc, char const* argv[])

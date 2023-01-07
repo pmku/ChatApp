@@ -67,24 +67,29 @@ int acceptsock(){ //Acceptsock will be called when a new client connects
 }
 
 //Two functions below by Hanifi Demir
-char *messageReturner(char *message){
+char *messageReturner(char *message)
+{
 	char *trueMessage = (char*)malloc(sizeof(char) * strlen(message));
 	int i = 0,j = 0;
-	for(i = 0;i < strlen(message);i++){
+	for(i = 0;i < strlen(message);i++)
+	{
 		if(message[i] != '-' && message[i + 1] != '>')
 		{
 			trueMessage[i] = message[i];
 		}
 	}
-	trueMessage[i+1]='\0';
+	trueMessage[i] = '\0';
 	return trueMessage;
 }
 
-char *receiverReturner(char *message){
+char *receiverReturner(char *message)
+{
 	char *receiver = (char*)malloc(sizeof(char) * strlen(message));
 	int i = 0,j = 0;
-	for(i = 0;i < strlen(message);i++){
-		if(message[i] == '-' && message[i + 1] == '>'){
+	for(i = 0;i < strlen(message);i++)
+	{
+		if(message[i] == '-' && message[i + 1] == '>')
+		{
 			for(i=0;i < strlen(message);i++)
 			{
 				receiver[j] = message[i + 2];
@@ -92,7 +97,7 @@ char *receiverReturner(char *message){
 			}
 		}
 	}
-	receiver[j+1]='\0';
+	receiver[j] = '\0';
 	return receiver;
 }
 
@@ -122,30 +127,40 @@ void *c_listener(void *_client){
 				char teststring[1024];
 				int testnumber = 0;
 
-				for(i = 0; i < strlen(rmessage);i++){
+				for(i = 0; i < strlen(rmessage);i++)
+				{
 					teststring[i] = rmessage[i];
 				}
-				for(i = 0;i < 5;i++){
+				
+				teststring[i] = '\0';
+				
+				for(i = 0;i < 5;i++)
+				{
 					randomNumbers[i] = rand() % 2;
 				}
-				for(i = 0;i < strlen(teststring);i++){
-					if(teststring[i] == '|'){
+				
+				for(i = 0;i < strlen(teststring);i++)
+				{
+					if(teststring[i] == '|')
+					{
 						testnumber++;
 						i++;
 					}
-					if(testnumber == 1){
-						if(randomNumbers[0] == 1){
+					if(testnumber == 1)
+					{
+						if(randomNumbers[0] == 1)
+						{
 							teststring[4 + randomNumbers[3]] = (char) randomNumbers[2] + 48;
 							testnumber++;
 						}
 					}
 				}
 				char *sendedMessage = messageReturner(teststring);
-				char *clientreceiver = receiverReturner(teststring);
 				iterator=mainc;//Reset iterator
 				char target[17];
 				strcat(target, receiverReturner(teststring));
-				while(strcmp(target, iterator->c_username) != 0){
+				while(strcmp(target, iterator->c_username) != 0)
+				{
 					iterator=iterator->nextc;
 				}
 				send(iterator->c_address, teststring, strlen(teststring), 0);
@@ -153,7 +168,8 @@ void *c_listener(void *_client){
 				fprintf(logfile,"%s %s", getdate(), teststring);
 				bzero(teststring, 1024);
 			}
-			else if(strncmp(rmessage,"MERR", 4) == 0){
+			else if(strncmp(rmessage,"MERR", 4) == 0)
+			{
 				//Resend the message in case of an error by Hanifi Demir
 				fprintf(logfile,"%s Client %s could not receive the message properly!\n",getdate(), ((struct client *)_client)->c_username);
 				int i;
@@ -167,19 +183,26 @@ void *c_listener(void *_client){
 				{
 					teststring[i] = rmessage[i];
 				}
+				
+				teststring[i] = '\0';
+				
 				for(i = 0;i < 5;i++)
 				{
 					randomNumbers[i] = rand() % 2;
 				}
 
-				for(i = 0;i < strlen(teststring);i++){
-					if(teststring[i] == '|'){
+				for(i = 0;i < strlen(teststring);i++)
+				{
+					if(teststring[i] == '|')
+					{
 						testnumber++;
 						i++;
 					}
-					if(testnumber == 1){
-						if(randomNumbers[0] == 1){
-							teststring[4 + randomNumbers[3]] = (char) randomNumbers[2] + 48;
+					if(testnumber == 1)
+					{
+						if(randomNumbers[0] == 1)
+						{
+							teststring[5 + randomNumbers[3]] = (char) randomNumbers[2] + 48;
 							testnumber++;
 						}
 					}
@@ -187,7 +210,8 @@ void *c_listener(void *_client){
 				char *sendedMessage = messageReturner(teststring);
 				char target[17];
 				strcat(target, receiverReturner(teststring));
-				while(strcmp(target, iterator->c_username) != 0){
+				while(strcmp(target, iterator->c_username) != 0)
+				{
 					iterator=iterator->nextc;
 				}
 				send(iterator->c_address, teststring, strlen(teststring), 0);
@@ -196,10 +220,12 @@ void *c_listener(void *_client){
 			}
 
 			//Send a list of clients to client that asks for it
-			else if(strncmp(rmessage,"L", 1) == 0){
+			else if(strncmp(rmessage,"L", 1) == 0)
+			{
 				bzero(clientlist, 200);
 				strcat(clientlist, "List of Active Clients\n");
-				while(iterator != NULL){
+				while(iterator != NULL)
+				{
 					strcat(clientlist, iterator->c_username);
 					strcat(clientlist, "\n");
 					iterator=iterator->nextc;

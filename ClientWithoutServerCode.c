@@ -335,6 +335,20 @@ char *receiverReturner(char *message)
         int charackterChecker = 1;
         int defaultChecker = 0;
         int tester = 0;
+        char username[100];
+        char usernameWithCommand[100] = "CONN¦";
+        char *connectMessage;
+      
+        printf("Please enter your username to connect server : ");
+        scanf("%s",username);
+        
+        strcat(usernameWithCommand,username);
+        
+        usernameWithCommand[strlen(usernameWithCommand) +1] = '\0';
+    
+        send(sock,usernameWithCommand,strlen(usernameWithCommand),0);
+        
+        
         while(charackterChecker != 0)
         {
             i = input(realMessage);
@@ -345,11 +359,10 @@ char *receiverReturner(char *message)
                 continue;
             }
             else if(strncmp(realMessage,"GONE", 4) == 0){
-                send(sock,"GONE",4,0);
-                break;
-            }
-            else if(strncmp(realMessage,"CONN", 4) == 0){
                 send(sock,realMessage,strlen(realMessage),0);
+                close(client_fd);
+                charackterChecker = 1;
+                break;
             }
             
             char *receiver = receiverReturner(realMessage);
@@ -426,7 +439,7 @@ char *receiverReturner(char *message)
         	printf("%s\n", buffer);
     
         // closing the connected socket
-        close(client_fd);
+        
         return 0;
         
     }

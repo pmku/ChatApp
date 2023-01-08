@@ -1,13 +1,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <stdint.h>
-#include <inttypes.h>
+#include<stdint.h>
+#include<inttypes.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <unistd.h>
-#include <sys/types.h>
-#include <netinet/in.h>
 
 char *parityCalculator(char *message,int messagelength);
 uint32_t CRC32(char *msg);
@@ -313,10 +311,8 @@ char *formattedMessageSender(char *messageWithReceiver){
 
 int main(int argc, char const* argv[])
 {
-    char *goneMessage = "GONE";
     int sock = 0, valread, client_fd;
     struct sockaddr_in serv_addr;
-    int sockfd,n;
     char buffer[1024] = { 0 };
     char inp[10];
     
@@ -344,6 +340,8 @@ int main(int argc, char const* argv[])
     
     
     int i;
+    char realMessage[100];
+    char *server_reply;
     int charackterChecker = 1;
     int defaultChecker = 0;
     int tester = 0;
@@ -351,12 +349,11 @@ int main(int argc, char const* argv[])
     {
         while(charackterChecker != 0)
         {
-            bzero(buffer,256);
-            fgets(buffer,255,stdin);
-            char *receiver = receiverReturner(buffer);
-            for(i = 0;i < strlen(buffer);i++)
+            i = input(realMessage);
+            char *receiver = receiverReturner(realMessage);
+            for(i = 0;i < strlen(realMessage);i++)
             {
-                if(buffer[i]== '>')
+                if(realMessage[i]== '>')
                 {
                     tester++;
     		if(tester == 2)
@@ -368,7 +365,7 @@ int main(int argc, char const* argv[])
                     }
                 }
                 
-                if(buffer[i] > 255u && tester == 0)
+                if(realMessage[i] > 255u && tester == 0)
                 {
                     printf("You can't enter turkish caracters please try again.\n");
                     defaultChecker = 1;
@@ -386,15 +383,24 @@ int main(int argc, char const* argv[])
                 charackterChecker = 0;
             }
         }
-        char *finalMessage = formattedMessageSender(buffer);
-        int isMessageIsGone = strncmp(finalMessage,buffer,4);
-        if(isMessageIsGone == 0){
-            return 0;
+        
+        char *finalMessage = formattedMessageSender(realMessage);
+        
+        if (send(sock, finalMessage, strlen(finalMessage), 0) < 0) {
+        perror("Send failed");
+        return -1;
         }
-        n = write(sockfd, buffer, strlen(buffer));
+
+        printf("Message sent to server\n");
+
+    // Receive reply from server
+        if (recv(sock, server_reply, 2000, 0) < 0) {
+            perror("Recv failed");
+            return -1;
+        }
+        ;
+        printf("Message sent.\n");
         sleep(1);
-        if (n < 0)
-        perror("Error writing to socket");
         
         
     }

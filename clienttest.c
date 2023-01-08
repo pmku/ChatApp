@@ -6,6 +6,7 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#define PORT 17137
 
 char *parityCalculator(char *message,int messagelength);
 uint32_t CRC32(char *msg);

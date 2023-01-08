@@ -313,9 +313,10 @@ char *formattedMessageSender(char *messageWithReceiver){
 
 int main(int argc, char const* argv[])
 {
-    int goneMessage = "GONE";
+    char *goneMessage = "GONE";
     int sock = 0, valread, client_fd;
     struct sockaddr_in serv_addr;
+    int sockfd,n;
     char buffer[1024] = { 0 };
     char inp[10];
     
@@ -343,7 +344,6 @@ int main(int argc, char const* argv[])
     
     
     int i;
-    char realMessage[100];
     int charackterChecker = 1;
     int defaultChecker = 0;
     int tester = 0;
@@ -351,11 +351,12 @@ int main(int argc, char const* argv[])
     {
         while(charackterChecker != 0)
         {
-            i = input(realMessage);
-            char *receiver = receiverReturner(realMessage);
-            for(i = 0;i < strlen(realMessage);i++)
+            bzero(buffer,256);
+            fgets(buffer,255,stdin);
+            char *receiver = receiverReturner(buffer);
+            for(i = 0;i < strlen(buffer);i++)
             {
-                if(realMessage[i]== '>')
+                if(buffer[i]== '>')
                 {
                     tester++;
     		if(tester == 2)
@@ -367,7 +368,7 @@ int main(int argc, char const* argv[])
                     }
                 }
                 
-                if(realMessage[i] > 255u && tester == 0)
+                if(buffer[i] > 255u && tester == 0)
                 {
                     printf("You can't enter turkish caracters please try again.\n");
                     defaultChecker = 1;
@@ -385,26 +386,21 @@ int main(int argc, char const* argv[])
                 charackterChecker = 0;
             }
         }
-        
-        char *finalMessage = formattedMessageSender(realMessage);
-        
-        
-        
-        int isMessageIsGone = strncmp(finalMessage, goneMessage, 4);
-        if(isMessageIsGone == 0)
-        {
-            close(client_fd);
+        char *finalMessage = formattedMessageSender(buffer);
+        int isMessageIsGone = strncmp(finalMessage,buffer,4);
+        if(isMessageIsGone == 0){
+            return 0;
         }
-        
-        bzero(buffer,256);
-        fgets(buffer,255,finalMessage);
         n = write(sockfd, buffer, strlen(buffer));
-        printf("Message sent.\n");
         sleep(1);
         if (n < 0)
         perror("Error writing to socket");
         
+        
     }
+    
+    // closing the connected socket
+    close(client_fd);
     return 0;
     
 }

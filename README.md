@@ -1,5 +1,5 @@
 <i>Was going to be</i> a chat application for UNIX desktop computers.
-Server code utilises;
+Server code utilizes;
 <ul>
 	<li>Socket Programming</li>
 	<li>Multithreading</li>
